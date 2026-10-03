@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGAP - Sistem Informasi Gempolkrep & Administrasi Pengambilan</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  
+    <!-- Supabase JS SDK v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Custom JS -->
+    <script src="main.js"></script>
+</body>
+</html>
+</head>
+<body>
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay">
+        <div class="text-center">
+            <div class="spinner-border text-success" role="status" style="width: 3.5rem; height: 3.5rem;"></div>
+            <div class="mt-3 fw-bold text-secondary fs-5" id="loading-text">Memuat Sistem SIGAP...</div>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <!-- VIEW 1: LOGIN -->
+        <div id="login-view" class="container min-vh-100 d-flex justify-content-center align-items-center py-5">
+            <div class="card shadow-lg border-0 rounded-4 p-4 p-md-5" style="max-width: 480px; width: 100%;">
+                <div class="text-center mb-4">
+                    <div class="bg-white border rounded-circle d-inline-flex p-3 mb-3 shadow-sm">
+                        <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" class="rounded-circle bg-white" style="width: 48px; height: 48px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/48x48/198754/ffffff?text=PG';">
+                    </div>
+                    <h3 class="fw-bold text-dark fs-5">SIGAP - Gempolkrep</h3>
+                    <p class="text-muted small">Sistem Informasi Administrasi Pengambilan Gula</p>
+                </div>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                            <input type="text" id="login-username" class="form-control border-start-0 ps-0" placeholder="admin / gudang" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                            <input type="password" id="login-password" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm rounded-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Masuk Aplikasi
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW 2: DASHBOARD / MAIN APP -->
+        <div id="main-view" class="d-none">
+            <nav class="navbar navbar-dark bg-success shadow-sm px-3 sticky-top">
+                <div class="container-fluid d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-light btn-sm me-3 fw-bold text-success shadow-sm rounded-2 d-flex align-items-center px-2.5 py-1.5 border-0" type="button" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+                            <i class="bi bi-list fs-4 me-1"></i> <span class="d-none d-sm-inline small">Menu</span>
+                        </button>
+                    </div>
+                    <div class="text-center text-white mx-auto">
+                        <a class="navbar-brand fw-bold d-flex align-items-center m-0 justify-content-center text-decoration-none text-white" href="#">
+                            <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" class="me-2 rounded-circle bg-white" style="width: 32px; height: 32px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/32x32/ffffff/198754?text=PG';">
+                            <span class="text-truncate fs-6 fs-md-5">SIGAP PG Gempolkrep</span>
+                        </a>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm dropdown-toggle fw-semibold px-3 py-1.5 rounded-pill shadow-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle text-success me-1"></i> <span id="user-display-name">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3">
+                            <li><h6 class="dropdown-header text-uppercase fs-7">Sesi Aktif</h6></li>
+                            <li><a class="dropdown-item text-danger fw-semibold" href="#" onclick="handleLogout()"><i class="bi bi-box-arrow-right me-2"></i> Keluar</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-0">
+                <div class="row g-0">
+                    <nav id="sidebarMenu" class="sidebar p-3">
+                        <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
+                            <div class="d-flex align-items-center text-success fw-bold fs-5 text-nowrap overflow-hidden user-select-none">
+                                <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" class="me-2 rounded-circle bg-white" style="width: 28px; height: 28px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/28x28/ffffff/198754?text=PG';">
+                                <span>PG Gempolkrep</span>
+                            </div>
+                            <button class="btn btn-sm btn-dark text-light border-0" type="button" onclick="toggleSidebar()" title="Tutup Menu"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="position-sticky">
+                            <ul class="nav flex-column" id="nav-menu-list">
+                                <li class="nav-item admin-utama-only mb-1">
+                                    <a class="nav-link active d-flex align-items-center" href="#" onclick="switchTab('dashboard', this)">
+                                        <i class="bi bi-speedometer2 me-2 fs-5"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item mb-1">
+                                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#subMasterMenu" role="button" aria-expanded="true">
+                                        <span><i class="bi bi-collection me-2 fs-5"></i> Master Data</span>
+                                        <i class="bi bi-chevron-down small"></i>
+                                    </a>
+                                    <div class="collapse show sub-menu" id="subMasterMenu">
+                                        <ul class="nav flex-column">
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('master', this)">
+                                                    <i class="bi bi-people me-2"></i> Data Karyawan
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item mb-1">
+                                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#subTransMenu" role="button" aria-expanded="true">
+                                        <span><i class="bi bi-journal-check me-2 fs-5"></i> Operasional</span>
+                                        <i class="bi bi-chevron-down small"></i>
+                                    </a>
+                                    <div class="collapse show sub-menu" id="subTransMenu">
+                                        <ul class="nav flex-column">
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('input-curah', this)">
+                                                    <i class="bi bi-box-seam me-2"></i> Gula UPS Curah
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('input-retail', this)">
+                                                    <i class="bi bi-bag-check me-2"></i> Gula UPS Retail
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item mb-1">
+                                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#subReportMenu" role="button" aria-expanded="true">
+                                        <span><i class="bi bi-file-earmark-bar-graph me-2 fs-5"></i> Laporan</span>
+                                        <i class="bi bi-chevron-down small"></i>
+                                    </a>
+                                    <div class="collapse show sub-menu" id="subReportMenu">
+                                        <ul class="nav flex-column">
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('rekap', this)">
+                                                    <i class="bi bi-file-earmark-excel me-2"></i> Rekap & Export
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+
+                    <main id="mainContentArea" class="col main-content px-3 px-md-4 py-4">
+                        <!-- TAB 1: DASHBOARD -->
+                        <div id="tab-dashboard" class="content-tab">
+                            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-4 border-bottom gap-3">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Dashboard Statistik</h1>
+                                    <p class="text-muted small mb-0">Ringkasan pengambilan jatah gula & nilai ekonomi seluruh karyawan</p>
+                                </div>
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <div class="d-flex align-items-center bg-white border rounded-3 px-3 py-1 shadow-sm">
+                                        <label for="dashboard-bulan" class="form-label small fw-bold text-uppercase text-muted m-0 me-2"><i class="bi bi-calendar-event me-1"></i> Bulan:</label>
+                                        <input type="month" id="dashboard-bulan" class="form-control form-control-sm border-0 bg-transparent fw-semibold" onchange="renderDashboardStats()">
+                                    </div>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fw-semibold">
+                                        <i class="bi bi-shield-check me-1"></i> Role: <span id="role-badge-text">Admin Utama</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #ffc107;">
+                                        <div class="text-muted small fw-bold text-uppercase mb-1">Total Keluar</div>
+                                        <div class="fs-3 fw-bold text-dark" id="stat-total-keluar">0 Kg</div>
+                                        <div class="text-warning small mt-1"><i class="bi bi-box-seam"></i> Curah & Retail</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #0dcaf0;">
+                                        <div class="text-muted small fw-bold text-uppercase mb-1">Total Potongan</div>
+                                        <div class="fs-3 fw-bold text-dark" id="stat-total-potongan">Rp 0</div>
+                                        <div class="text-info small mt-1"><i class="bi bi-cash-stack"></i> Karpim, Karpel, PKWT</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #20c997;">
+                                        <div class="text-muted small fw-bold text-uppercase mb-1">Total Uang Masuk</div>
+                                        <div class="fs-3 fw-bold text-dark" id="stat-total-uang-masuk">Rp 0</div>
+                                        <div class="text-success small mt-1"><i class="bi bi-wallet2"></i> OS & Pensiunan</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #fd7e14;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="text-muted small fw-bold text-uppercase mb-1">Gula Curah / Kg</div>
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-1 admin-utama-only" onclick="openPriceModal()" title="Ubah Harga Gula"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                        <div class="fs-4 fw-bold" id="stat-harga-curah" style="color: #fd7e14;">Rp 0</div>
+                                        <div class="text-muted small mt-1"><i class="bi bi-tag-fill"></i> Harga Curah</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #6f42c1;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="text-muted small fw-bold text-uppercase mb-1">Gula Retail / Kg</div>
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-1 admin-utama-only" onclick="openPriceModal()" title="Ubah Harga Gula"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                        <div class="fs-4 fw-bold" id="stat-harga-retail" style="color: #6f42c1;">Rp 0</div>
+                                        <div class="text-muted small mt-1"><i class="bi bi-tag-fill"></i> Harga Retail</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
+                                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-wallet2 me-2 text-success"></i> Total Nilai & Pengambilan Berdasarkan Jenis Pegawai (Bulan Dipilih)</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Jenis Pegawai</th>
+                                                <th>Jml Karyawan</th>
+                                                <th>Total Jatah (Kg)</th>
+                                                <th>Sudah Keluar (Kg)</th>
+                                                <th>Total Nilai Uang (Rp)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-summary-type"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-bar-chart-fill me-2 text-success"></i> Tren Pengambilan Gula Bulanan</h5>
+                                </div>
+                                <div style="position: relative; height:320px; width:100%">
+                                    <canvas id="chartGula"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: DATA MASTER KARYAWAN -->
+                        <div id="tab-master" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom flex-wrap gap-2">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Data Master Karyawan</h1>
+                                    <p class="text-muted small mb-0">Kelola informasi karyawan dan kuota jatah gula</p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="btn btn-outline-warning fw-semibold shadow-sm rounded-3 px-3 admin-utama-only" onclick="openQuotaSettingsModal()">
+                                        <i class="bi bi-gear-fill me-1"></i> Pengaturan Kuota
+                                    </button>
+                                    <button class="btn btn-outline-success fw-semibold shadow-sm rounded-3 px-3" onclick="exportMasterToExcel()">
+                                        <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Master
+                                    </button>
+                                    <button class="btn btn-success fw-semibold shadow-sm rounded-3 px-3 admin-utama-only" id="btn-add-karyawan" onclick="openEmployeeModal()">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Tambah Karyawan
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-3 bg-white mb-3">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" id="search-karyawan" class="form-control border-start-0 border-end-0 ps-0" placeholder="Cari berdasarkan Nama atau Personal Number..." oninput="toggleClearSearchBtn(); renderMasterTable();">
+                                            <button class="btn btn-outline-secondary border-start-0 border-end-0 bg-white text-muted d-none" type="button" id="btn-clear-search" onclick="clearMasterSearch()" title="Hapus Pencarian"><i class="bi bi-x-lg"></i></button>
+                                            <button class="btn btn-outline-secondary bg-light border-start-0" type="button" onclick="renderMasterTable()" title="Cari"><i class="bi bi-search"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-3 bg-white">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="table-karyawan">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('NO')">No <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Personal Number')">Personal No <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Nama')">Nama, Bagian & Jabatan <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Jenis Pegawai')">Jenis Pegawai <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Jumlah Jatah Gula')">Jatah Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Sisa Jatah Gula')">Sisa Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 text-center action-col">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-karyawan"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: INPUT GULA CURAH -->
+                        <div id="tab-input-curah" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Gula UPS Curah</h1>
+                                    <p class="text-muted small mb-0">Pengambilan jatah gula curah mengikat pada sisa jatah karyawan</p>
+                                </div>
+                            </div>
+                            <div class="row g-4 justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+                                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-box-seam me-2 text-success"></i> Form Pengambilan Gula Curah</h5>
+                                        <form id="form-curah" onsubmit="submitTransaction(event, 'Curah')">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">ID Pembelian</label>
+                                                <div class="input-group">
+                                                    <input type="text" id="tx-curah-pnumber" class="form-control" placeholder="Ketik ID Pembelian (Contoh: IDP-001)" required oninput="fetchEmployeeInfo(this.value, 'Curah')">
+                                                    <button class="btn btn-outline-success" type="button" onclick="fetchEmployeeInfo(document.getElementById('tx-curah-pnumber').value, 'Curah')">Cek</button>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Nama Karyawan</label>
+                                                <input type="text" id="tx-curah-nama" class="form-control bg-light" readonly placeholder="Otomatis terisi">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Sisa Jatah Gula</label>
+                                                <input type="text" id="tx-curah-sisa" class="form-control bg-light fw-bold text-success" readonly placeholder="0 Kg">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label fw-semibold small text-uppercase">Jumlah Ambil (Kg)</label>
+                                                <input type="number" id="tx-curah-jumlah" class="form-control fw-bold" min="1" required placeholder="Jumlah Kg">
+                                            </div>
+                                            <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm rounded-3">
+                                                <i class="bi bi-check-circle-fill me-2"></i> Proses & Cetak Nota Curah
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: INPUT GULA RETAIL -->
+                        <div id="tab-input-retail" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Gula UPS Retail</h1>
+                                    <p class="text-muted small mb-0">Pembelian gula retail tidak mengikat pada sisa jatah karyawan</p>
+                                </div>
+                            </div>
+                            <div class="row g-4 justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+                                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-bag-check me-2 text-primary"></i> Form Pengambilan Gula Retail</h5>
+                                        <form id="form-retail" onsubmit="submitTransaction(event, 'Retail')">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">ID Pembelian</label>
+                                                <div class="input-group">
+                                                    <input type="text" id="tx-retail-pnumber" class="form-control" placeholder="Ketik ID Pembelian (Contoh: IDP-001)" required oninput="fetchEmployeeInfo(this.value, 'Retail')">
+                                                    <button class="btn btn-outline-primary" type="button" onclick="fetchEmployeeInfo(document.getElementById('tx-retail-pnumber').value, 'Retail')">Cek</button>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Nama Karyawan</label>
+                                                <input type="text" id="tx-retail-nama" class="form-control bg-light" readonly placeholder="Otomatis terisi">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Jenis Pegawai</label>
+                                                <input type="text" id="tx-retail-jenis" class="form-control bg-light" readonly placeholder="Otomatis terisi">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label fw-semibold small text-uppercase">Jumlah Ambil (Kg)</label>
+                                                <input type="number" id="tx-retail-jumlah" class="form-control fw-bold" min="1" required placeholder="Masukkan jumlah Kg">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold shadow-sm rounded-3">
+                                                <i class="bi bi-check-circle-fill me-2"></i> Proses & Cetak Nota Retail
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 5: REKAPITULASI & EXPORT -->
+                        <div id="tab-rekap" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Rekapitulasi & Export Excel</h1>
+                                    <p class="text-muted small mb-0">Riwayat transaksi lengkap dengan harga & total nilai uang</p>
+                                </div>
+                                <button class="btn btn-success fw-semibold shadow-sm rounded-3 px-3" onclick="exportToExcel()">
+                                    <i class="bi bi-file-earmark-excel-fill me-2"></i> Download Excel
+                                </button>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
+                                <div class="row align-items-end g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small text-uppercase">Filter Jenis Pegawai</label>
+                                        <select id="filter-jenis" class="form-select rounded-3" onchange="renderRekapTable()">
+                                            <option value="">Semua Jenis Pegawai</option>
+                                            <option value="Pimpinan">Pimpinan</option>
+                                            <option value="Pelaksana">Pelaksana</option>
+                                            <option value="PKWT - 12 BLN">PKWT - 12 BLN</option>
+                                            <option value="HONORER">HONORER</option>
+                                            <option value="OS 12 BULAN">OS 12 BULAN</option>
+                                            <option value="PENSIUNAN">PENSIUNAN</option>
+                                            <option value="PKWT DMG">PKWT DMG</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small text-uppercase">Filter Jenis Gula</label>
+                                        <select id="filter-jenis-gula" class="form-select rounded-3" onchange="renderRekapTable()">
+                                            <option value="">Semua Jenis Gula</option>
+                                            <option value="Curah">Curah</option>
+                                            <option value="Retail">Retail</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small text-uppercase">Filter Bulan</label>
+                                        <input type="month" id="filter-bulan" class="form-control rounded-3" onchange="renderRekapTable()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-3 bg-white">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="table-rekap">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('ID Transaksi')">ID Transaksi <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Timestamp')">Timestamp <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Personal Number')">Personal No <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Nama')">Nama <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Bagian')">Bagian <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jabatan')">Jabatan <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jenis Pegawai')">Jenis Pegawai <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jenis Gula')">Jenis Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jumlah Ambil')">Jumlah Ambil <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Harga Gula')">Harga Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Total Nilai')">Total Nilai (Rp) <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Petugas Input')">Petugas Input <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-rekap"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </main>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FORM KARYAWAN -->
+    <div class="modal fade" id="employeeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white px-4 py-3">
+                    <h5 class="modal-title fw-bold" id="employeeModalTitle">Tambah Karyawan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="employee-form" onsubmit="saveEmployeeForm(event)">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="emp-old-id">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Personal Number</label>
+                            <input type="text" id="emp-pnumber" class="form-control" placeholder="Contoh: 18004574" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Nama Lengkap</label>
+                            <input type="text" id="emp-nama" class="form-control" placeholder="Nama Karyawan" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Bagian</label>
+                                <input type="text" id="emp-bagian" class="form-control" placeholder="Bagian / Unit" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Jabatan</label>
+                                <input type="text" id="emp-jabatan" class="form-control" placeholder="Jabatan" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Jenis Pegawai</label>
+                            <select id="emp-jenis" class="form-select" required onchange="onJenisPegawaiChange(this.value)">
+                                <option value="Pimpinan">Pimpinan</option>
+                                <option value="Pelaksana">Pelaksana</option>
+                                <option value="PKWT - 12 BLN">PKWT - 12 BLN</option>
+                                <option value="HONORER">HONORER</option>
+                                <option value="OS 12 BULAN">OS 12 BULAN</option>
+                                <option value="PENSIUNAN">PENSIUNAN</option>
+                                <option value="PKWT DMG">PKWT DMG</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Jumlah Jatah Gula (Kg)</label>
+                                <input type="number" id="emp-jatah" class="form-control fw-bold" min="0" required placeholder="10">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Sisa Jatah Gula (Kg)</label>
+                                <input type="number" id="emp-sisa" class="form-control fw-bold text-success" min="0" required placeholder="10">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-outline-secondary px-4 rounded-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success px-4 fw-bold rounded-3 shadow-sm">Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT HARGA GULA -->
+    <div class="modal fade" id="priceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white px-4 py-3">
+                    <h5 class="modal-title fw-bold fs-6">Atur Harga Gula</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="price-form" onsubmit="savePriceForm(event)">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Harga Gula Curah / Kg (Rp)</label>
+                            <input type="number" id="input-harga-curah" class="form-control fw-bold" min="1000" required placeholder="15000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Harga Gula Retail / Kg (Rp)</label>
+                            <input type="number" id="input-harga-retail" class="form-control fw-bold" min="1000" required placeholder="16000">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-outline-secondary px-3 rounded-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success px-3 fw-bold rounded-3 shadow-sm">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PENGATURAN KUOTA & RESET OTOMATIS -->
+    <div class="modal fade" id="quotaSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark px-4 py-3">
+                    <h5 class="modal-title fw-bold fs-6"><i class="bi bi-gear-fill me-2"></i> Pengaturan & Reset Kuota Gula</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase">Atur Tanggal Reset Otomatis Bulanan</label>
+                        <select id="config-reset-date" class="form-select rounded-3 mb-2"></select>
+                        <div class="form-text text-muted small">Sisa jatah gula karyawan akan direset otomatis setiap bulan pada tanggal yang dipilih.</div>
+                        <button type="button" class="btn btn-outline-warning btn-sm fw-bold mt-2 rounded-3" onclick="saveQuotaConfig()">Simpan Tanggal Reset</button>
+                    </div>
+                    <hr>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold small text-uppercase text-danger">Reset Manual Keseluruhan</label>
+                        <p class="text-muted small mb-2">Tekan tombol di bawah untuk langsung mereset sisa jatah gula seluruh karyawan ke kuota maksimal saat ini juga.</p>
+                        <button type="button" class="btn btn-danger btn-sm fw-bold rounded-3 px-3" onclick="triggerManualReset()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Kuota Sekarang
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-3 btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- THERMAL 80mm PRINTABLE RECEIPT TEMPLATE -->
+    <div id="printable-receipt" class="d-none">
+        <div style="font-family: 'Courier New', Courier, monospace; width: 80mm; margin: 0 auto; padding: 4mm; background: #fff;">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+                    <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" style="width: 24px; height: 24px; object-fit: cover;" onerror="this.style.display='none';">
+                    <h4 style="margin: 0; font-size: 14px; font-weight: bold;">PG GEMPOLKREP</h4>
+                </div>
+                <p style="margin: 2px 0; font-size: 11px; font-weight: bold;">NOTA PENGAMBILAN GULA UPS KARYAWAN</p>
+                <div style="border-bottom: 1px dashed #000; margin-top: 5px;"></div>
+            </div>
+            <div style="font-size: 11px; margin-bottom: 8px;">
+                <div><strong>ID:</strong> <span id="receipt-id"></span></div>
+                <div><strong>Waktu:</strong> <span id="receipt-time"></span></div>
+                <div><strong>Petugas:</strong> <span id="receipt-officer"></span></div>
+                <div><strong>Jenis Gula:</strong> <span id="receipt-jenis-gula"></span></div>
+            </div>
+            <div style="border-bottom: 1px dashed #000; margin-bottom: 8px;"></div>
+            <div style="font-size: 11px; margin-bottom: 8px;">
+                <div><strong>Personal No:</strong> <span id="receipt-pno"></span></div>
+                <div><strong>Nama:</strong> <span id="receipt-nama"></span></div>
+                <div><strong>Bagian:</strong> <span id="receipt-bagian"></span></div>
+                <div><strong>Jabatan:</strong> <span id="receipt-jabatan"></span></div>
+                <div><strong>Jenis Pegawai:</strong> <span id="receipt-jenis"></span></div>
+            </div>
+            <div style="border-bottom: 1px dashed #000; margin-bottom: 8px;"></div>
+            <div style="font-size: 11px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between;"><span>Jumlah Ambil:</span> <strong id="receipt-jumlah"></strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>Harga / Kg:</span> <span id="receipt-harga"></span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;"><strong>Total Nilai:</strong> <strong id="receipt-total"></strong></div>
+            </div>
+            <div style="text-align: center; font-size: 10px; margin-top: 15px;">
+                <p style="margin: 0;">*** TERIMA KASIH ***</p>
+                <p style="margin: 0;">Pembelian Gula akan dibayarkan dengan pemotongan gaji pada bulan selanjutnya</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="main.js"></script>
+</body>
+</html>
