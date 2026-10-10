@@ -1,0 +1,1583 @@
+<!-- FILE: index.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGAP - Sistem Informasi Gempolkrep & Administrasi Pengambilan</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #198754;
+            --primary-dark: #146c43;
+            --bg-body: #f8f9fa;
+            --sidebar-width: 260px;
+        }
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            overflow-x: hidden;
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: #212529;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            transition: transform 0.3s ease-in-out, margin 0.3s ease-in-out;
+            box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1);
+            user-select: none;
+        }
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease-in-out;
+        }
+        .main-content.expanded {
+            margin-left: 0 !important;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.mobile-show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+        .sidebar .nav-link {
+            color: #adb5bd;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            padding: 10px 15px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background-color: var(--primary-color);
+            transform: translateX(3px);
+        }
+        .sidebar .sub-menu {
+            padding-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            margin-left: 10px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+        .sidebar .sub-menu .nav-link {
+            font-size: 0.9rem;
+            padding: 8px 12px;
+        }
+        .card-stat {
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 12px;
+        }
+        .card-stat:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(25, 135, 84, 0.04);
+        }
+        .sortable-th {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .sortable-th:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Thermal 58mm Ultra-Sharp Print Styles */
+        @media print {
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+            html, body {
+                width: 58mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #printable-receipt, #printable-receipt * {
+                visibility: visible !important;
+            }
+            #printable-receipt {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 58mm !important;
+                max-width: 58mm !important;
+                padding: 2mm 3mm 5mm 3mm !important;
+                box-sizing: border-box !important;
+                background: #ffffff !important;
+                z-index: 99999 !important;
+                font-family: Consolas, 'Courier New', Monaco, monospace !important;
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+                color: #000000 !important;
+                font-weight: 600 !important;
+            }
+            .receipt-dashed-line {
+                border-bottom: 1px dashed #000000 !important;
+                margin: 5px 0 !important;
+            }
+            .receipt-solid-line {
+                border-bottom: 1px solid #000000 !important;
+                margin: 5px 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay">
+        <div class="text-center">
+            <div class="spinner-border text-success" role="status" style="width: 3.5rem; height: 3.5rem;"></div>
+            <div class="mt-3 fw-bold text-secondary fs-5" id="loading-text">Memuat Sistem SIGAP...</div>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <!-- VIEW 1: LOGIN -->
+        <div id="login-view" class="container min-vh-100 d-flex justify-content-center align-items-center py-5">
+            <div class="card shadow-lg border-0 rounded-4 p-4 p-md-5" style="max-width: 480px; width: 100%;">
+                <div class="text-center mb-4">
+                    <div class="bg-white border rounded-circle d-inline-flex p-3 mb-3 shadow-sm">
+                        <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" class="rounded-circle bg-white" style="width: 48px; height: 48px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/48x48/198754/ffffff?text=PG';">
+                    </div>
+                    <h3 class="fw-bold text-dark fs-5">SIGAP - Gempolkrep</h3>
+                    <p class="text-muted small">Sistem Informasi Administrasi Pengambilan Gula</p>
+                </div>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-uppercase">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                            <input type="text" id="login-username" class="form-control border-start-0 ps-0" placeholder="admin / gudang" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                            <input type="password" id="login-password" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm rounded-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Masuk Aplikasi
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW 2: DASHBOARD / MAIN APP -->
+		<button onclick="importJsonToFirestore()" class="btn btn-warning position-fixed bottom-0 end-0 m-3 shadow">
+    🚀 Jalankan Migrasi JSON ke Firebase
+</button>
+        <div id="main-view" class="d-none">
+            <nav class="navbar navbar-dark bg-success shadow-sm px-3 sticky-top">
+                <div class="container-fluid d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-light btn-sm me-3 fw-bold text-success shadow-sm rounded-2 d-flex align-items-center px-2.5 py-1.5 border-0" type="button" onclick="toggleSidebar()" title="Buka/Tutup Menu Navigasi">
+                            <i class="bi bi-list fs-4 me-1"></i> <span class="d-none d-sm-inline small">Menu</span>
+                        </button>
+                    </div>
+                    <div class="text-center text-white mx-auto">
+                        <a class="navbar-brand fw-bold d-flex align-items-center m-0 justify-content-center text-decoration-none text-white" href="#">
+                            <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" class="me-2 rounded-circle bg-white" style="width: 32px; height: 32px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/32x32/ffffff/198754?text=PG';">
+                            <span class="text-truncate fs-6 fs-md-5">SIGAP PG Gempolkrep</span>
+                        </a>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm dropdown-toggle fw-semibold px-3 py-1.5 rounded-pill shadow-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle text-success me-1"></i> <span id="user-display-name">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3">
+                            <li><h6 class="dropdown-header text-uppercase fs-7">Sesi Aktif</h6></li>
+                            <li><a class="dropdown-item text-danger fw-semibold" href="#" onclick="handleLogout()"><i class="bi bi-box-arrow-right me-2"></i> Keluar</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-0">
+                <div class="row g-0">
+                    <nav id="sidebarMenu" class="sidebar p-3">
+                        <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
+                            <div class="d-flex align-items-center text-success fw-bold fs-5 text-nowrap overflow-hidden user-select-none">
+                                <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" class="me-2 rounded-circle bg-white" style="width: 28px; height: 28px; object-fit: cover;" onerror="this.onerror=null; this.src='https://placehold.co/28x28/ffffff/198754?text=PG';">
+                                <span>PG Gempolkrep</span>
+                            </div>
+                            <button class="btn btn-sm btn-dark text-light border-0" type="button" onclick="toggleSidebar()" title="Tutup Menu"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <div class="position-sticky">
+                            <ul class="nav flex-column" id="nav-menu-list">
+                                <li class="nav-item admin-utama-only mb-1">
+                                    <a class="nav-link active d-flex align-items-center" href="#" onclick="switchTab('dashboard', this)">
+                                        <i class="bi bi-speedometer2 me-2 fs-5"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item mb-1">
+                                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#subMasterMenu" role="button" aria-expanded="true">
+                                        <span><i class="bi bi-collection me-2 fs-5"></i> Master Data</span>
+                                        <i class="bi bi-chevron-down small"></i>
+                                    </a>
+                                    <div class="collapse show sub-menu" id="subMasterMenu">
+                                        <ul class="nav flex-column">
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('master', this)">
+                                                    <i class="bi bi-people me-2"></i> Data Karyawan
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item mb-1">
+                                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#subTransMenu" role="button" aria-expanded="true">
+                                        <span><i class="bi bi-journal-check me-2 fs-5"></i> Operasional</span>
+                                        <i class="bi bi-chevron-down small"></i>
+                                    </a>
+                                    <div class="collapse show sub-menu" id="subTransMenu">
+                                        <ul class="nav flex-column">
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('input-curah', this)">
+                                                    <i class="bi bi-box-seam me-2"></i> Gula UPS Curah
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('input-retail', this)">
+                                                    <i class="bi bi-bag-check me-2"></i> Gula UPS Retail
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="nav-item mb-1">
+                                    <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#subReportMenu" role="button" aria-expanded="true">
+                                        <span><i class="bi bi-file-earmark-bar-graph me-2 fs-5"></i> Laporan</span>
+                                        <i class="bi bi-chevron-down small"></i>
+                                    </a>
+                                    <div class="collapse show sub-menu" id="subReportMenu">
+                                        <ul class="nav flex-column">
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#" onclick="switchTab('rekap', this)">
+                                                    <i class="bi bi-file-earmark-excel me-2"></i> Rekap & Export
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+
+                    <main id="mainContentArea" class="col main-content px-3 px-md-4 py-4">
+                        <!-- TAB 1: DASHBOARD -->
+                        <div id="tab-dashboard" class="content-tab">
+                            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-4 border-bottom gap-3">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Dashboard Statistik</h1>
+                                    <p class="text-muted small mb-0">Ringkasan pengambilan jatah gula & nilai ekonomi seluruh karyawan</p>
+                                </div>
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <div class="d-flex align-items-center bg-white border rounded-3 px-3 py-1 shadow-sm">
+                                        <label for="dashboard-bulan" class="form-label small fw-bold text-uppercase text-muted m-0 me-2"><i class="bi bi-calendar-event me-1"></i> Bulan:</label>
+                                        <input type="month" id="dashboard-bulan" class="form-control form-control-sm border-0 bg-transparent fw-semibold" onchange="renderDashboardStats()">
+                                    </div>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fw-semibold">
+                                        <i class="bi bi-shield-check me-1"></i> Role: <span id="role-badge-text">Admin Utama</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #ffc107;">
+                                        <div class="text-muted small fw-bold text-uppercase mb-1">Total Keluar</div>
+                                        <div class="fs-3 fw-bold text-dark" id="stat-total-keluar">0 Kg</div>
+                                        <div class="text-warning small mt-1"><i class="bi bi-box-seam"></i> Curah & Retail</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #0dcaf0;">
+                                        <div class="text-muted small fw-bold text-uppercase mb-1">Total Potongan</div>
+                                        <div class="fs-3 fw-bold text-dark" id="stat-total-potongan">Rp 0</div>
+                                        <div class="text-info small mt-1"><i class="bi bi-cash-stack"></i> Karpim, Karpel, PKWT</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #20c997;">
+                                        <div class="text-muted small fw-bold text-uppercase mb-1">Total Uang Masuk</div>
+                                        <div class="fs-3 fw-bold text-dark" id="stat-total-uang-masuk">Rp 0</div>
+                                        <div class="text-success small mt-1"><i class="bi bi-wallet2"></i> OS & Pensiunan</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #fd7e14;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="text-muted small fw-bold text-uppercase mb-1">Gula Curah / Kg</div>
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-1 admin-utama-only" onclick="openPriceModal()" title="Ubah Harga Gula"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                        <div class="fs-4 fw-bold" id="stat-harga-curah" style="color: #fd7e14;">Rp 0</div>
+                                        <div class="text-muted small mt-1"><i class="bi bi-tag-fill"></i> Harga Curah</div>
+                                    </div>
+                                </div>
+                                <div class="col-md">
+                                    <div class="card card-stat shadow-sm p-4 border-0 bg-white" style="border-left-color: #6f42c1;">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="text-muted small fw-bold text-uppercase mb-1">Gula Retail / Kg</div>
+                                            <button class="btn btn-sm btn-outline-secondary py-0 px-1 admin-utama-only" onclick="openPriceModal()" title="Ubah Harga Gula"><i class="bi bi-pencil"></i></button>
+                                        </div>
+                                        <div class="fs-4 fw-bold" id="stat-harga-retail" style="color: #6f42c1;">Rp 0</div>
+                                        <div class="text-muted small mt-1"><i class="bi bi-tag-fill"></i> Harga Retail</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
+                                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-wallet2 me-2 text-success"></i> Total Nilai & Pengambilan Berdasarkan Jenis Pegawai (Bulan Dipilih)</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Jenis Pegawai</th>
+                                                <th>Jml Karyawan</th>
+                                                <th>Total Jatah (Kg)</th>
+                                                <th>Sudah Keluar (Kg)</th>
+                                                <th>Total Nilai Uang (Rp)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-summary-type"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm border-0 rounded-4 p-4 bg-white">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-bar-chart-fill me-2 text-success"></i> Tren Pengambilan Gula Bulanan</h5>
+                                </div>
+                                <div style="position: relative; height:320px; width:100%">
+                                    <canvas id="chartGula"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: DATA MASTER KARYAWAN -->
+                        <div id="tab-master" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom flex-wrap gap-2">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Data Master Karyawan</h1>
+                                    <p class="text-muted small mb-0">Kelola informasi karyawan dan kuota jatah gula</p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="btn btn-outline-warning fw-semibold shadow-sm rounded-3 px-3 admin-utama-only" onclick="openQuotaSettingsModal()">
+                                        <i class="bi bi-gear-fill me-1"></i> Pengaturan Kuota
+                                    </button>
+                                    <button class="btn btn-outline-success fw-semibold shadow-sm rounded-3 px-3" onclick="exportMasterToExcel()">
+                                        <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Master
+                                    </button>
+                                    <button class="btn btn-success fw-semibold shadow-sm rounded-3 px-3 admin-utama-only" id="btn-add-karyawan" onclick="openEmployeeModal()">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Tambah Karyawan
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-3 bg-white mb-3">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" id="search-karyawan" class="form-control border-start-0 border-end-0 ps-0" placeholder="Cari berdasarkan Nama atau Personal Number..." oninput="toggleClearSearchBtn(); renderMasterTable();">
+                                            <button class="btn btn-outline-secondary border-start-0 border-end-0 bg-white text-muted d-none" type="button" id="btn-clear-search" onclick="clearMasterSearch()" title="Hapus Pencarian"><i class="bi bi-x-lg"></i></button>
+                                            <button class="btn btn-outline-secondary bg-light border-start-0" type="button" onclick="renderMasterTable()" title="Cari"><i class="bi bi-search"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-3 bg-white">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="table-karyawan">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('NO')">No <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Personal Number')">Personal No <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Nama')">Nama, Bagian & Jabatan <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Jenis Pegawai')">Jenis Pegawai <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Jumlah Jatah Gula')">Jatah Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortMasterTable('Sisa Jatah Gula')">Sisa Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 text-center action-col">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-karyawan"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: INPUT GULA CURAH -->
+                        <div id="tab-input-curah" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Gula UPS Curah</h1>
+                                    <p class="text-muted small mb-0">Pengambilan jatah gula curah mengikat pada sisa jatah karyawan</p>
+                                </div>
+                            </div>
+                            <div class="row g-4 justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+                                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-box-seam me-2 text-success"></i> Form Pengambilan Gula Curah</h5>
+                                        <form id="form-curah" onsubmit="submitTransaction(event, 'Curah')">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">ID Pembelian</label>
+                                                <div class="input-group">
+                                                    <input type="text" id="tx-curah-pnumber" class="form-control" placeholder="Ketik ID Pembelian (Contoh: IDP-001)" required oninput="fetchEmployeeInfo(this.value, 'Curah')">
+                                                    <button class="btn btn-outline-success" type="button" onclick="fetchEmployeeInfo(document.getElementById('tx-curah-pnumber').value, 'Curah')">Cek</button>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Nama Karyawan</label>
+                                                <input type="text" id="tx-curah-nama" class="form-control bg-light" readonly placeholder="Otomatis terisi">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Sisa Jatah Gula</label>
+                                                <input type="text" id="tx-curah-sisa" class="form-control bg-light fw-bold text-success" readonly placeholder="0 Kg">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label fw-semibold small text-uppercase">Jumlah Ambil (Kg)</label>
+                                                <input type="number" id="tx-curah-jumlah" class="form-control fw-bold" min="1" required placeholder="Jumlah Kg">
+                                            </div>
+                                            <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm rounded-3">
+                                                <i class="bi bi-check-circle-fill me-2"></i> Proses & Cetak Nota Curah
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: INPUT GULA RETAIL -->
+                        <div id="tab-input-retail" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Gula UPS Retail</h1>
+                                    <p class="text-muted small mb-0">Pembelian gula retail tidak mengikat pada sisa jatah karyawan</p>
+                                </div>
+                            </div>
+                            <div class="row g-4 justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+                                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-bag-check me-2 text-primary"></i> Form Pengambilan Gula Retail</h5>
+                                        <form id="form-retail" onsubmit="submitTransaction(event, 'Retail')">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">ID Pembelian</label>
+                                                <div class="input-group">
+                                                    <input type="text" id="tx-retail-pnumber" class="form-control" placeholder="Ketik ID Pembelian (Contoh: IDP-001)" required oninput="fetchEmployeeInfo(this.value, 'Retail')">
+                                                    <button class="btn btn-outline-primary" type="button" onclick="fetchEmployeeInfo(document.getElementById('tx-retail-pnumber').value, 'Retail')">Cek</button>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Nama Karyawan</label>
+                                                <input type="text" id="tx-retail-nama" class="form-control bg-light" readonly placeholder="Otomatis terisi">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold small text-uppercase">Jenis Pegawai</label>
+                                                <input type="text" id="tx-retail-jenis" class="form-control bg-light" readonly placeholder="Otomatis terisi">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label fw-semibold small text-uppercase">Jumlah Ambil (Kg)</label>
+                                                <input type="number" id="tx-retail-jumlah" class="form-control fw-bold" min="1" required placeholder="Masukkan jumlah Kg">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold shadow-sm rounded-3">
+                                                <i class="bi bi-check-circle-fill me-2"></i> Proses & Cetak Nota Retail
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 5: REKAPITULASI & EXPORT -->
+                        <div id="tab-rekap" class="content-tab d-none">
+                            <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Rekapitulasi & Export Excel</h1>
+                                    <p class="text-muted small mb-0">Riwayat transaksi lengkap dengan harga & total nilai uang</p>
+                                </div>
+                                <button class="btn btn-success fw-semibold shadow-sm rounded-3 px-3" onclick="exportToExcel()">
+                                    <i class="bi bi-file-earmark-excel-fill me-2"></i> Download Excel
+                                </button>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
+                                <div class="row align-items-end g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small text-uppercase">Filter Jenis Pegawai</label>
+                                        <select id="filter-jenis" class="form-select rounded-3" onchange="renderRekapTable()">
+                                            <option value="">Semua Jenis Pegawai</option>
+                                            <option value="Pimpinan">Pimpinan</option>
+                                            <option value="Pelaksana">Pelaksana</option>
+                                            <option value="PKWT - 12 BLN">PKWT - 12 BLN</option>
+                                            <option value="HONORER">HONORER</option>
+                                            <option value="OS 12 BULAN">OS 12 BULAN</option>
+                                            <option value="PENSIUNAN">PENSIUNAN</option>
+                                            <option value="PKWT DMG">PKWT DMG</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small text-uppercase">Filter Jenis Gula</label>
+                                        <select id="filter-jenis-gula" class="form-select rounded-3" onchange="renderRekapTable()">
+                                            <option value="">Semua Jenis Gula</option>
+                                            <option value="Curah">Curah</option>
+                                            <option value="Retail">Retail</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold small text-uppercase">Filter Bulan</label>
+                                        <input type="month" id="filter-bulan" class="form-control rounded-3" onchange="renderRekapTable()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card shadow-sm border-0 rounded-4 p-3 bg-white">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0" id="table-rekap">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('ID Transaksi')">ID Transaksi <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Timestamp')">Timestamp <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Personal Number')">Personal No <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Nama')">Nama <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Bagian')">Bagian <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jabatan')">Jabatan <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jenis Pegawai')">Jenis Pegawai <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jenis Gula')">Jenis Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Jumlah Ambil')">Jumlah Ambil <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Harga Gula')">Harga Gula <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Total Nilai')">Total Nilai (Rp) <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 sortable-th" onclick="sortRekapTable('Petugas Input')">Petugas Input <i class="bi bi-arrow-down-up small text-muted"></i></th>
+                                                <th class="py-3 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-rekap"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FORM KARYAWAN -->
+    <div class="modal fade" id="employeeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white px-4 py-3">
+                    <h5 class="modal-title fw-bold" id="employeeModalTitle">Tambah Karyawan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="employee-form" onsubmit="saveEmployeeForm(event)">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="emp-old-id">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Personal Number</label>
+                            <input type="text" id="emp-pnumber" class="form-control" placeholder="Contoh: 18004574" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Nama Lengkap</label>
+                            <input type="text" id="emp-nama" class="form-control" placeholder="Nama Karyawan" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Bagian</label>
+                                <input type="text" id="emp-bagian" class="form-control" placeholder="Bagian / Unit" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Jabatan</label>
+                                <input type="text" id="emp-jabatan" class="form-control" placeholder="Jabatan" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Jenis Pegawai</label>
+                            <select id="emp-jenis" class="form-select" required onchange="onJenisPegawaiChange(this.value)">
+                                <option value="Pimpinan">Pimpinan</option>
+                                <option value="Pelaksana">Pelaksana</option>
+                                <option value="PKWT - 12 BLN">PKWT - 12 BLN</option>
+                                <option value="HONORER">HONORER</option>
+                                <option value="OS 12 BULAN">OS 12 BULAN</option>
+                                <option value="PENSIUNAN">PENSIUNAN</option>
+                                <option value="PKWT DMG">PKWT DMG</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Jumlah Jatah Gula (Kg)</label>
+                                <input type="number" id="emp-jatah" class="form-control fw-bold" min="0" required placeholder="10">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-uppercase">Sisa Jatah Gula (Kg)</label>
+                                <input type="number" id="emp-sisa" class="form-control fw-bold text-success" min="0" required placeholder="10">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-outline-secondary px-4 rounded-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success px-4 fw-bold rounded-3 shadow-sm">Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT HARGA GULA -->
+    <div class="modal fade" id="priceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white px-4 py-3">
+                    <h5 class="modal-title fw-bold fs-6">Atur Harga Gula</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="price-form" onsubmit="savePriceForm(event)">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Harga Gula Curah / Kg (Rp)</label>
+                            <input type="number" id="input-harga-curah" class="form-control fw-bold" min="1000" required placeholder="15000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-uppercase">Harga Gula Retail / Kg (Rp)</label>
+                            <input type="number" id="input-harga-retail" class="form-control fw-bold" min="1000" required placeholder="16000">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                        <button type="button" class="btn btn-outline-secondary px-3 rounded-3" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success px-3 fw-bold rounded-3 shadow-sm">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PENGATURAN KUOTA & RESET OTOMATIS -->
+    <div class="modal fade" id="quotaSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark px-4 py-3">
+                    <h5 class="modal-title fw-bold fs-6"><i class="bi bi-gear-fill me-2"></i> Pengaturan & Reset Kuota Gula</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-uppercase">Atur Tanggal Reset Otomatis Bulanan</label>
+                        <select id="config-reset-date" class="form-select rounded-3 mb-2"></select>
+                        <div class="form-text text-muted small">Sisa jatah gula karyawan akan direset otomatis setiap bulan pada tanggal yang dipilih.</div>
+                        <button type="button" class="btn btn-outline-warning btn-sm fw-bold mt-2 rounded-3" onclick="saveQuotaConfig()">Simpan Tanggal Reset</button>
+                    </div>
+                    <hr>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold small text-uppercase text-danger">Reset Manual Keseluruhan</label>
+                        <p class="text-muted small mb-2">Tekan tombol di bawah untuk langsung mereset sisa jatah gula seluruh karyawan ke kuota maksimal saat ini juga.</p>
+                        <button type="button" class="btn btn-danger btn-sm fw-bold rounded-3 px-3" onclick="triggerManualReset()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Kuota Sekarang
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-3 btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- THERMAL 58mm HIGH-CONTRAST PRINTABLE RECEIPT TEMPLATE -->
+    <div id="printable-receipt" class="d-none">
+        <div style="font-family: Consolas, 'Courier New', Monaco, monospace; width: 52mm; margin: 0 auto; color: #000000; font-weight: 600;">
+            <div style="text-align: center; margin-bottom: 6px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px;">
+                    <img src="https://lh3.googleusercontent.com/d/15Mni0kueey87-1eD_2FMupdVKJqxR42v" alt="Logo" style="width: 20px; height: 20px; object-fit: cover;" onerror="this.style.display='none';">
+                    <h4 style="margin: 0; font-size: 13px; font-weight: 800; letter-spacing: 0.5px;">PG GEMPOLKREP</h4>
+                </div>
+                <p style="margin: 2px 0; font-size: 10px; font-weight: 700; text-transform: uppercase;">NOTA PENGAMBILAN GULA UPS</p>
+                <div class="receipt-dashed-line"></div>
+            </div>
+            
+            <div style="font-size: 10px; margin-bottom: 6px; line-height: 1.3;">
+                <div style="display: flex; justify-content: space-between;"><span>No. ID:</span><strong id="receipt-id"></strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>Waktu:</span><span id="receipt-time"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Petugas:</span><span id="receipt-officer"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span>Gula:</span><strong id="receipt-jenis-gula"></strong></div>
+            </div>
+            
+            <div class="receipt-dashed-line"></div>
+            
+            <div style="font-size: 10px; margin-bottom: 6px; line-height: 1.3;">
+                <div>P.No  : <span id="receipt-pno"></span></div>
+                <div>Nama  : <strong id="receipt-nama"></strong></div>
+                <div>Bagian: <span id="receipt-bagian"></span></div>
+                <div>Jbt   : <span id="receipt-jabatan"></span></div>
+                <div>Status: <span id="receipt-jenis"></span></div>
+            </div>
+            
+            <div class="receipt-dashed-line"></div>
+            
+            <div style="font-size: 11px; margin-bottom: 8px; line-height: 1.3;">
+                <div style="display: flex; justify-content: space-between;"><span>Jumlah Ambil:</span><strong id="receipt-jumlah"></strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>Harga / Kg  :</span><span id="receipt-harga"></span></div>
+                <div class="receipt-solid-line"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-top: 2px;">
+                    <span>TOTAL:</span><span id="receipt-total"></span>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 9px; margin-top: 10px; line-height: 1.2;">
+                <p style="margin: 0 0 2px 0; font-weight: 700;">*** TERIMA KASIH ***</p>
+                <p style="margin: 0;">Gula akan dibayarkan via pemotongan gaji bulan berikutnya.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- FIREBASE & MAIN APPLICATION SCRIPT -->
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        let appDb = {
+            karyawan: [],
+            log: [],
+            users: [
+                { Username: "admin", Password: "admin123", Role: "admin_utama" },
+                { Username: "gudang", Password: "gudang123", Role: "admin_gudang" }
+            ],
+            config: {
+                HargaGulaCurah: 15000,
+                HargaGulaRetail: 16000,
+                LastResetMonth: "",
+                ResetDate: "1"
+            }
+        };
+
+        let currentUser = null;
+        let chartInstance = null;
+        let currentSortColumn = 'NO';
+        let currentSortAsc = true;
+        let rekapSortColumn = 'Timestamp';
+        let rekapSortAsc = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        async function initApp() {
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = String(now.getMonth() + 1).padStart(2, '0');
+            let ym = `${year}-${month}`;
+
+            let monthInputRekap = document.getElementById('filter-bulan');
+            if (monthInputRekap) monthInputRekap.value = ym;
+
+            let monthInputDash = document.getElementById('dashboard-bulan');
+            if (monthInputDash) monthInputDash.value = ym;
+
+            let resetDateSelect = document.getElementById('config-reset-date');
+            if (resetDateSelect) {
+                resetDateSelect.innerHTML = '';
+                for (let i = 1; i <= 31; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = i;
+                    opt.text = `Tanggal ${i}`;
+                    resetDateSelect.appendChild(opt);
+                }
+            }
+
+            startLoading();
+            try {
+                // Tarik data dari Firestore secara asinkron
+                let karyawanSnapshot = await getDocs(collection(db, "karyawan"));
+                let karyawanList = [];
+                karyawanSnapshot.forEach(d => karyawanList.push({ id: d.id, ...d.data() }));
+
+                let logSnapshot = await getDocs(collection(db, "logGulaKeluar"));
+                let logList = [];
+                logSnapshot.forEach(d => logList.push({ id: d.id, ...d.data() }));
+
+                if (karyawanList.length > 0) appDb.karyawan = karyawanList;
+                if (logList.length > 0) appDb.log = logList;
+            } catch (err) {
+                console.warn("Menggunakan data lokal cadangan:", err);
+            }
+
+            endLoading();
+            renderUI();
+        }
+
+        function startLoading() {
+            let overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function endLoading() {
+            let overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        window.toggleSidebar = function() {
+            let sidebar = document.getElementById('sidebarMenu');
+            let main = document.getElementById('mainContentArea');
+            if (window.innerWidth < 768) {
+                sidebar.classList.toggle('mobile-show');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                main.classList.toggle('expanded');
+            }
+        };
+
+        window.handleLogin = function(e) {
+            e.preventDefault();
+            let u = document.getElementById('login-username').value.trim();
+            let p = document.getElementById('login-password').value.trim();
+
+            let found = appDb.users.find(x => x.Username === u && x.Password === p);
+            if (found) {
+                currentUser = { username: found.Username, role: found.Role };
+                enterApp();
+            } else {
+                Swal.fire('Login Gagal', 'Username atau password salah!', 'error');
+            }
+        };
+
+        function enterApp() {
+            document.getElementById('login-view').classList.add('d-none');
+            document.getElementById('main-view').classList.remove('d-none');
+            document.getElementById('user-display-name').innerText = currentUser.username + ' (' + currentUser.role + ')';
+            
+            let roleText = document.getElementById('role-badge-text');
+            if (roleText) roleText.innerText = currentUser.role === 'admin_utama' ? 'Admin Utama' : 'Admin Gudang';
+
+            if (currentUser.role === 'admin_gudang') {
+                document.querySelectorAll('.admin-utama-only').forEach(el => el.classList.add('d-none'));
+                let btnAdd = document.getElementById('btn-add-karyawan');
+                if (btnAdd) btnAdd.classList.add('d-none');
+                window.switchTab('input-curah', document.querySelector('#nav-menu-list a[onclick*="input-curah"]'));
+            } else {
+                document.querySelectorAll('.admin-utama-only').forEach(el => el.classList.remove('d-none'));
+                let btnAdd = document.getElementById('btn-add-karyawan');
+                if (btnAdd) btnAdd.classList.remove('d-none');
+                window.switchTab('dashboard', document.querySelector('#nav-menu-list a[onclick*="dashboard"]'));
+            }
+            renderUI();
+        }
+
+        window.handleLogout = function() {
+            currentUser = null;
+            document.getElementById('main-view').classList.add('d-none');
+            document.getElementById('login-view').classList.remove('d-none');
+            document.getElementById('login-form').reset();
+        };
+
+        window.switchTab = function(tabId, el) {
+            document.querySelectorAll('.content-tab').forEach(t => t.classList.add('d-none'));
+            let targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('d-none');
+
+            document.querySelectorAll('.sidebar .nav-link').forEach(l => {
+                if (!l.getAttribute('data-bs-toggle')) {
+                    l.classList.remove('active', 'bg-success', 'text-white');
+                }
+            });
+            if (el && !el.getAttribute('data-bs-toggle')) {
+                el.classList.add('active');
+            }
+
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebarMenu').classList.remove('mobile-show');
+            }
+        };
+
+        function renderUI() {
+            try {
+                renderDashboardStats();
+                renderMasterTable();
+                renderRekapTable();
+            } catch (err) {
+                console.error("Error rendering UI:", err);
+            }
+        }
+
+        function formatIDR(val) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0);
+        }
+
+        function renderDashboardStats() {
+            if (!appDb || !appDb.karyawan) return;
+            let hargaCurah = Number(appDb.config.HargaGulaCurah || 15000);
+            let hargaRetail = Number(appDb.config.HargaGulaRetail || 16000);
+            
+            document.getElementById('stat-harga-curah').innerText = formatIDR(hargaCurah);
+            document.getElementById('stat-harga-retail').innerText = formatIDR(hargaRetail);
+
+            let dashBulan = document.getElementById('dashboard-bulan') ? document.getElementById('dashboard-bulan').value : '';
+
+            let filteredLog = appDb.log.filter(item => {
+                if (!dashBulan) return true;
+                return String(item.Timestamp).substring(0, 7) === dashBulan;
+            });
+
+            let totalKeluarKg = filteredLog.reduce((sum, item) => sum + Number(item["Jumlah Ambil"] || 0), 0);
+            document.getElementById('stat-total-keluar').innerText = totalKeluarKg + ' Kg';
+
+            let uniqueTypes = [...new Set(appDb.karyawan.map(x => String(x["Jenis Pegawai"]).trim()).filter(Boolean))];
+            let tbodySummary = document.getElementById('tbody-summary-type');
+            if (tbodySummary) tbodySummary.innerHTML = '';
+
+            let monthlyTotals = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+            appDb.log.forEach(item => {
+                if (item.Timestamp) {
+                    let parts = String(item.Timestamp).split('-');
+                    if (parts.length >= 2) {
+                        let monthIdx = parseInt(parts[1], 10) - 1;
+                        if (monthIdx >= 0 && monthIdx < 12) {
+                            monthlyTotals[monthIdx] += Number(item["Jumlah Ambil"] || 0);
+                        }
+                    }
+                }
+            });
+
+            let totalPotonganCalc = 0;
+            let totalUangMasukCalc = 0;
+            let uangMasukTypes = ["os", "pensiunan"];
+
+            uniqueTypes.forEach(t => {
+                let empList = appDb.karyawan.filter(x => String(x["Jenis Pegawai"]).trim().toLowerCase() === t.toLowerCase());
+                let count = empList.length;
+                let jatahT = empList.reduce((s, x) => s + Number(x["Jumlah Jatah Gula"] || 0), 0);
+                
+                let pNumbers = empList.map(x => String(x["Personal Number"]).trim());
+                let empLogs = filteredLog.filter(logItem => pNumbers.includes(String(logItem["Personal Number"]).trim()));
+                
+                let keluarT = empLogs.reduce((sum, logItem) => sum + Number(logItem["Jumlah Ambil"] || 0), 0);
+                
+                let nilaiTotal = empLogs.reduce((sum, logItem) => {
+                    let jGula = String(logItem["Jenis Gula"] || "Curah").toLowerCase();
+                    let hGula = Number(logItem["Harga Gula"] || (jGula === 'retail' ? hargaRetail : hargaCurah));
+                    return sum + (Number(logItem["Jumlah Ambil"]) * hGula);
+                }, 0);
+
+                let tLower = t.toLowerCase();
+                let isUangMasuk = uangMasukTypes.some(ut => tLower.includes(ut));
+
+                if (isUangMasuk) {
+                    totalUangMasukCalc += nilaiTotal;
+                } else {
+                    totalPotonganCalc += nilaiTotal;
+                }
+
+                if (tbodySummary) {
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="fw-semibold"><span class="badge bg-success bg-opacity-75">${t}</span></td>
+                        <td>${count} orang</td>
+                        <td>${jatahT} Kg</td>
+                        <td>${keluarT} Kg</td>
+                        <td class="fw-bold text-success">${formatIDR(nilaiTotal)}</td>
+                    `;
+                    tbodySummary.appendChild(tr);
+                }
+            });
+
+            document.getElementById('stat-total-potongan').innerText = formatIDR(totalPotonganCalc);
+            document.getElementById('stat-total-uang-masuk').innerText = formatIDR(totalUangMasukCalc);
+
+            let chartCanvas = document.getElementById('chartGula');
+            if (chartCanvas && typeof Chart !== 'undefined') {
+                let ctx = chartCanvas.getContext('2d');
+                if (chartInstance) chartInstance.destroy();
+
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                        datasets: [{
+                            label: 'Pengambilan Gula (Kg)',
+                            data: monthlyTotals,
+                            backgroundColor: '#198754',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { borderDash: [4, 4] } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        window.sortMasterTable = function(colName) {
+            if (currentSortColumn === colName) {
+                currentSortAsc = !currentSortAsc;
+            } else {
+                currentSortColumn = colName;
+                currentSortAsc = true;
+            }
+            renderMasterTable();
+        };
+
+        window.sortRekapTable = function(colName) {
+            if (rekapSortColumn === colName) {
+                rekapSortAsc = !rekapSortAsc;
+            } else {
+                rekapSortColumn = colName;
+                rekapSortAsc = false;
+            }
+            renderRekapTable();
+        };
+
+        window.toggleClearSearchBtn = function() {
+            let val = document.getElementById('search-karyawan').value;
+            let btn = document.getElementById('btn-clear-search');
+            if (btn) {
+                if (val) btn.classList.remove('d-none');
+                else btn.classList.add('d-none');
+            }
+        };
+
+        window.clearMasterSearch = function() {
+            document.getElementById('search-karyawan').value = '';
+            toggleClearSearchBtn();
+            renderMasterTable();
+        };
+
+        function renderMasterTable() {
+            let tbody = document.getElementById('tbody-karyawan');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (!appDb.karyawan || appDb.karyawan.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Belum ada data karyawan.</td></tr>`;
+                return;
+            }
+
+            let searchVal = document.getElementById('search-karyawan') ? document.getElementById('search-karyawan').value.toLowerCase().trim() : '';
+            
+            let filteredKaryawan = appDb.karyawan.filter(item => {
+                if (!searchVal) return true;
+                let nama = String(item.Nama || '').toLowerCase();
+                let pno = String(item["Personal Number"] || '').toLowerCase();
+                let bagian = String(item.Bagian || '').toLowerCase();
+                let jabatan = String(item.Jabatan || '').toLowerCase();
+                return nama.includes(searchVal) || pno.includes(searchVal) || bagian.includes(searchVal) || jabatan.includes(searchVal);
+            });
+
+            filteredKaryawan.sort((a, b) => {
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return currentSortAsc ? -1 : 1;
+                if (valA > valB) return currentSortAsc ? 1 : -1;
+                return 0;
+            });
+
+            if (filteredKaryawan.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Karyawan tidak ditemukan.</td></tr>`;
+                return;
+            }
+
+            filteredKaryawan.forEach((item, index) => {
+                let tr = document.createElement('tr');
+                let actionBtns = currentUser && currentUser.role === 'admin_utama' ? `
+                    <button class="btn btn-sm btn-outline-warning me-1 rounded-2" onclick="refillEmployee('${item["Personal Number"]}')" title="Isi ke Angka Maksimal Sisa Gula"><i class="bi bi-arrow-clockwise"></i></button>
+                    <button class="btn btn-sm btn-outline-primary me-1 rounded-2" onclick="editEmployee('${item["Personal Number"]}')" title="Edit"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-danger rounded-2" onclick="deleteEmployee('${item["Personal Number"]}')" title="Hapus"><i class="bi bi-trash"></i></button>
+                ` : `<span class="text-muted small">Akses Terbatas</span>`;
+
+                tr.innerHTML = `
+                    <td class="py-3">${index + 1}</td>
+                    <td class="py-3"><span class="badge bg-secondary bg-opacity-75">${item["Personal Number"]}</span></td>
+                    <td class="py-3 fw-semibold">${item.Nama} <br><small class="text-muted">${item.Bagian || '-'} / ${item.Jabatan || '-'}</small></td>
+                    <td class="py-3"><span class="badge bg-light text-dark border">${item["Jenis Pegawai"]}</span></td>
+                    <td class="py-3">${item["Jumlah Jatah Gula"]} Kg</td>
+                    <td class="py-3 fw-bold text-success">${item["Sisa Jatah Gula"]} Kg</td>
+                    <td class="py-3 text-center">${actionBtns}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.refillEmployee = function(pnumber) {
+            Swal.fire({
+                title: 'Isi Sisa Gula Maksimal?',
+                text: "Sisa jatah gula karyawan ini akan dikembalikan ke jumlah maksimal jatah awal.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Isi Maksimal!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let emp = appDb.karyawan.find(x => String(x["Personal Number"]).trim() === String(pnumber).trim());
+                    if (emp) {
+                        emp["Sisa Jatah Gula"] = emp["Jumlah Jatah Gula"];
+                        renderUI();
+                        Swal.fire('Berhasil!', 'Sisa jatah gula berhasil diisi ulang.', 'success');
+                    }
+                }
+            });
+        };
+
+        window.openQuotaSettingsModal = function() {
+            let selectEl = document.getElementById('config-reset-date');
+            if (selectEl && appDb.config && appDb.config.ResetDate) {
+                selectEl.value = appDb.config.ResetDate;
+            }
+            new bootstrap.Modal(document.getElementById('quotaSettingsModal')).show();
+        };
+
+        window.saveQuotaConfig = function() {
+            let resetDateVal = document.getElementById('config-reset-date').value;
+            appDb.config.ResetDate = resetDateVal;
+            bootstrap.Modal.getInstance(document.getElementById('quotaSettingsModal')).hide();
+            Swal.fire('Berhasil', 'Konfigurasi tanggal reset otomatis disimpan.', 'success');
+        };
+
+        window.triggerManualReset = function() {
+            Swal.fire({
+                title: 'Reset Manual Kuota?',
+                text: "Sisa jatah gula seluruh karyawan akan dikembalikan ke nilai maksimal jatah awal!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Ya, Reset Sekarang!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    appDb.karyawan.forEach(x => {
+                        let jenis = String(x["Jenis Pegawai"]).trim().toUpperCase();
+                        if (!jenis.includes("OS") && !jenis.includes("PENSIUNAN")) {
+                            x["Sisa Jatah Gula"] = x["Jumlah Jatah Gula"];
+                        }
+                    });
+                    renderUI();
+                    bootstrap.Modal.getInstance(document.getElementById('quotaSettingsModal')).hide();
+                    Swal.fire('Berhasil!', 'Seluruh kuota sisa jatah gula berhasil direset.', 'success');
+                }
+            });
+        };
+
+        window.exportMasterToExcel = function() {
+            if (!appDb.karyawan || appDb.karyawan.length === 0) {
+                Swal.fire('Kosong', 'Tidak ada data karyawan untuk diexport.', 'warning');
+                return;
+            }
+            let wb = XLSX.utils.book_new();
+            let wsMaster = XLSX.utils.json_to_sheet(appDb.karyawan);
+            XLSX.utils.book_append_sheet(wb, wsMaster, "Data Karyawan");
+            XLSX.writeFile(wb, "Data_Master_Karyawan.xlsx");
+            Swal.fire('Berhasil', 'Data Master Karyawan berhasil diunduh!', 'success');
+        };
+
+        window.onJenisPegawaiChange = function(val) {
+            let jatahInput = document.getElementById('emp-jatah');
+            let sisaInput = document.getElementById('emp-sisa');
+            let oldId = document.getElementById('emp-old-id').value;
+            if (!oldId) {
+                let vUpper = String(val).toUpperCase();
+                if (vUpper.includes('OS') || vUpper.includes('PENSIUNAN')) {
+                    if (jatahInput) jatahInput.value = 5;
+                    if (sisaInput) sisaInput.value = 5;
+                } else {
+                    if (jatahInput) jatahInput.value = 10;
+                    if (sisaInput) sisaInput.value = 10;
+                }
+            }
+        };
+
+        window.openEmployeeModal = function(pnumber = null) {
+            let form = document.getElementById('employee-form');
+            form.reset();
+            document.getElementById('emp-old-id').value = '';
+            
+            if (pnumber) {
+                document.getElementById('employeeModalTitle').innerText = 'Edit Karyawan';
+                let emp = appDb.karyawan.find(x => String(x["Personal Number"]).trim() === String(pnumber).trim());
+                if (emp) {
+                    document.getElementById('emp-old-id').value = emp["Personal Number"];
+                    document.getElementById('emp-pnumber').value = emp["Personal Number"];
+                    document.getElementById('emp-nama').value = emp.Nama;
+                    document.getElementById('emp-bagian').value = emp.Bagian || '';
+                    document.getElementById('emp-jabatan').value = emp.Jabatan || '';
+                    document.getElementById('emp-jenis').value = emp["Jenis Pegawai"] || 'Pimpinan';
+                    document.getElementById('emp-jatah').value = emp["Jumlah Jatah Gula"];
+                    document.getElementById('emp-sisa').value = emp["Sisa Jatah Gula"];
+                }
+            } else {
+                document.getElementById('employeeModalTitle').innerText = 'Tambah Karyawan';
+                document.getElementById('emp-jenis').value = 'Pimpinan';
+                document.getElementById('emp-jatah').value = 10;
+                document.getElementById('emp-sisa').value = 10;
+            }
+            new bootstrap.Modal(document.getElementById('employeeModal')).show();
+        };
+
+        window.editEmployee = function(pnumber) {
+            openEmployeeModal(pnumber);
+        };
+
+        window.saveEmployeeForm = function(e) {
+            e.preventDefault();
+            let oldId = document.getElementById('emp-old-id').value;
+            let data = {
+                personalNumber: document.getElementById('emp-pnumber').value,
+                nama: document.getElementById('emp-nama').value,
+                bagian: document.getElementById('emp-bagian').value,
+                jabatan: document.getElementById('emp-jabatan').value,
+                jenisPegawai: document.getElementById('emp-jenis').value,
+                jumlahJatahGula: Number(document.getElementById('emp-jatah').value),
+                sisaJatahGula: Number(document.getElementById('emp-sisa').value)
+            };
+
+            if (oldId) {
+                let idx = appDb.karyawan.findIndex(x => String(x["Personal Number"]).trim() === String(oldId).trim());
+                if (idx !== -1) {
+                    appDb.karyawan[idx]["Personal Number"] = data.personalNumber;
+                    appDb.karyawan[idx].Nama = data.nama;
+                    appDb.karyawan[idx].Bagian = data.bagian;
+                    appDb.karyawan[idx].Jabatan = data.jabatan;
+                    appDb.karyawan[idx]["Jenis Pegawai"] = data.jenisPegawai;
+                    appDb.karyawan[idx]["Jumlah Jatah Gula"] = data.jumlahJatahGula;
+                    appDb.karyawan[idx]["Sisa Jatah Gula"] = data.sisaJatahGula;
+                }
+            } else {
+                appDb.karyawan.push({
+                    NO: appDb.karyawan.length + 1,
+                    "ID Pembelian": "IDP-00" + (appDb.karyawan.length + 1),
+                    "Jenis Pegawai": data.jenisPegawai,
+                    "Personal Number": data.personalNumber,
+                    Nama: data.nama,
+                    Bagian: data.bagian,
+                    Jabatan: data.jabatan,
+                    "Jumlah Jatah Gula": data.jumlahJatahGula,
+                    "Sisa Jatah Gula": data.sisaJatahGula
+                });
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('employeeModal')).hide();
+            renderUI();
+            Swal.fire('Berhasil', 'Data karyawan berhasil disimpan.', 'success');
+        };
+
+        window.deleteEmployee = function(pnumber) {
+            Swal.fire({
+                title: 'Hapus Karyawan?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    appDb.karyawan = appDb.karyawan.filter(x => String(x["Personal Number"]).trim() !== String(pnumber).trim());
+                    renderUI();
+                    Swal.fire('Terhapus!', 'Karyawan berhasil dihapus.', 'success');
+                }
+            });
+        };
+
+        window.openPriceModal = function() {
+            document.getElementById('input-harga-curah').value = appDb.config.HargaGulaCurah;
+            document.getElementById('input-harga-retail').value = appDb.config.HargaGulaRetail;
+            new bootstrap.Modal(document.getElementById('priceModal')).show();
+        };
+
+        window.savePriceForm = function(e) {
+            e.preventDefault();
+            appDb.config.HargaGulaCurah = Number(document.getElementById('input-harga-curah').value);
+            appDb.config.HargaGulaRetail = Number(document.getElementById('input-harga-retail').value);
+            bootstrap.Modal.getInstance(document.getElementById('priceModal')).hide();
+            renderUI();
+            Swal.fire('Berhasil', 'Harga gula berhasil diperbarui.', 'success');
+        };
+
+        window.fetchEmployeeInfo = function(idp, type) {
+            if (!idp) {
+                document.getElementById(`tx-${type.toLowerCase()}-nama`).value = '';
+                if (type === 'Curah') {
+                    document.getElementById('tx-curah-sisa').value = '';
+                    document.getElementById('tx-curah-jumlah').value = '';
+                } else {
+                    document.getElementById('tx-retail-jenis').value = '';
+                }
+                return;
+            }
+            let emp = appDb.karyawan.find(x => String(x["ID Pembelian"] || "").trim() === String(idp).trim());
+            if (emp) {
+                document.getElementById(`tx-${type.toLowerCase()}-nama`).value = emp.Nama;
+                if (type === 'Curah') {
+                    document.getElementById('tx-curah-sisa').value = emp["Sisa Jatah Gula"] + ' Kg';
+                    document.getElementById('tx-curah-jumlah').value = emp["Sisa Jatah Gula"];
+                } else {
+                    document.getElementById('tx-retail-jenis').value = emp["Jenis Pegawai"] || '-';
+                }
+            } else {
+                document.getElementById(`tx-${type.toLowerCase()}-nama`).value = '';
+                if (type === 'Curah') {
+                    document.getElementById('tx-curah-sisa').value = '';
+                    document.getElementById('tx-curah-jumlah').value = '';
+                } else {
+                    document.getElementById('tx-retail-jenis').value = '';
+                }
+            }
+        };
+
+        function triggerPrintReceipt(txData) {
+            document.getElementById('receipt-id').innerText = txData.idTrx;
+            document.getElementById('receipt-time').innerText = txData.timestamp;
+            document.getElementById('receipt-officer').innerText = txData.adminGudang;
+            document.getElementById('receipt-jenis-gula').innerText = txData.jenisGula;
+            document.getElementById('receipt-pno').innerText = txData.personalNumber;
+            document.getElementById('receipt-nama').innerText = txData.nama;
+            document.getElementById('receipt-bagian').innerText = txData.bagian || '-';
+            document.getElementById('receipt-jabatan').innerText = txData.jabatan || '-';
+            document.getElementById('receipt-jenis').innerText = txData.jenisPegawai;
+            document.getElementById('receipt-jumlah').innerText = txData.jumlahAmbil + ' Kg';
+            document.getElementById('receipt-harga').innerText = formatIDR(txData.hargaGula);
+            document.getElementById('receipt-total').innerText = formatIDR(txData.totalNilai);
+            window.print();
+        }
+
+        window.reprintTransaction = function(idTrx) {
+            let item = appDb.log.find(x => String(x["ID Transaksi"]).trim() === String(idTrx).trim());
+            if (!item) {
+                Swal.fire('Error', 'Data transaksi tidak ditemukan.', 'error');
+                return;
+            }
+            let jenisGula = item["Jenis Gula"] || "Curah";
+            let defaultHarga = jenisGula === 'Retail' ? appDb.config.HargaGulaRetail : appDb.config.HargaGulaCurah;
+            let harga = Number(item["Harga Gula"] || defaultHarga);
+            let totalNilai = Number(item["Total Nilai"] || (Number(item["Jumlah Ambil"]) * harga));
+            let emp = appDb.karyawan.find(x => String(x["Personal Number"]).trim() === String(item["Personal Number"]).trim()) || {};
+
+            triggerPrintReceipt({
+                idTrx: item["ID Transaksi"],
+                timestamp: item["Timestamp"],
+                adminGudang: item["Petugas Input"] || 'admin',
+                jenisGula: jenisGula,
+                personalNumber: item["Personal Number"],
+                nama: item["Nama"],
+                bagian: item["Bagian"] || emp.Bagian || '-',
+                jabatan: item["Jabatan"] || emp.Jabatan || '-',
+                jenisPegawai: item["Jenis Pegawai"] || emp["Jenis Pegawai"] || '-',
+                jumlahAmbil: item["Jumlah Ambil"],
+                hargaGula: harga,
+                totalNilai: totalNilai
+            });
+        };
+
+        window.submitTransaction = function(e, jenisGula) {
+            e.preventDefault();
+            let idPembelian = document.getElementById(`tx-${jenisGula.toLowerCase()}-pnumber`).value;
+            let jumlah = Number(document.getElementById(`tx-${jenisGula.toLowerCase()}-jumlah`).value);
+
+            let emp = appDb.karyawan.find(x => String(x["ID Pembelian"] || "").trim() === String(idPembelian).trim());
+            if (!emp) {
+                Swal.fire('Error', 'ID Pembelian tidak valid atau belum terdaftar.', 'error');
+                return;
+            }
+
+            if (jenisGula === 'Curah' && jumlah > Number(emp["Sisa Jatah Gula"])) {
+                Swal.fire('Validasi Gagal', `Jumlah ambil (${jumlah} Kg) melebihi sisa jatah gula (${emp["Sisa Jatah Gula"]} Kg)!`, 'error');
+                return;
+            }
+
+            let hargaGula = jenisGula === 'Curah' ? appDb.config.HargaGulaCurah : appDb.config.HargaGulaRetail;
+
+            if (jenisGula === 'Curah') {
+                emp["Sisa Jatah Gula"] -= jumlah;
+            }
+
+            let idTrx = "TRX-" + Math.floor(1000 + Math.random() * 9000);
+            let now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            
+            let fullTx = {
+                "ID Transaksi": idTrx,
+                Timestamp: now,
+                "Personal Number": emp["Personal Number"],
+                Nama: emp.Nama,
+                Bagian: emp.Bagian || '-',
+                Jabatan: emp.Jabatan || '-',
+                "Jenis Pegawai": emp["Jenis Pegawai"],
+                "Jenis Gula": jenisGula,
+                "Jumlah Ambil": jumlah,
+                "Harga Gula": hargaGula,
+                "Total Nilai": jumlah * hargaGula,
+                "Petugas Input": currentUser ? currentUser.username : 'admin'
+            };
+
+            appDb.log.push(fullTx);
+
+            document.getElementById(`form-${jenisGula.toLowerCase()}`).reset();
+            if (jenisGula === 'Curah') {
+                document.getElementById('tx-curah-nama').value = '';
+                document.getElementById('tx-curah-sisa').value = '';
+                document.getElementById('tx-curah-jumlah').value = '';
+            } else {
+                document.getElementById('tx-retail-nama').value = '';
+                document.getElementById('tx-retail-jenis').value = '';
+            }
+            renderUI();
+
+            triggerPrintReceipt({
+                idTrx: idTrx,
+                timestamp: now,
+                adminGudang: fullTx["Petugas Input"],
+                jenisGula: jenisGula,
+                personalNumber: emp["Personal Number"],
+                nama: emp.Nama,
+                bagian: emp.Bagian || '-',
+                jabatan: emp.Jabatan || '-',
+                jenisPegawai: emp["Jenis Pegawai"],
+                jumlahAmbil: jumlah,
+                hargaGula: hargaGula,
+                totalNilai: jumlah * hargaGula
+            });
+        };
+
+        function renderRekapTable() {
+            let tbody = document.getElementById('tbody-rekap');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            let filterJenis = document.getElementById('filter-jenis') ? document.getElementById('filter-jenis').value : '';
+            let filterJenisGula = document.getElementById('filter-jenis-gula') ? document.getElementById('filter-jenis-gula').value : '';
+            let filterBulan = document.getElementById('filter-bulan') ? document.getElementById('filter-bulan').value : '';
+
+            if (!appDb.log || appDb.log.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="text-center text-muted py-4">Belum ada riwayat transaksi.</td></tr>`;
+                return;
+            }
+
+            let filteredLog = appDb.log.filter(item => {
+                let matchJenis = !filterJenis || String(item["Jenis Pegawai"]).trim().toLowerCase() === String(filterJenis).trim().toLowerCase();
+                let matchJenisGula = !filterJenisGula || String(item["Jenis Gula"] || "Curah").trim().toLowerCase() === String(filterJenisGula).trim().toLowerCase();
+                let matchBulan = true;
+                if (filterBulan && item.Timestamp) {
+                    let itemMonth = String(item.Timestamp).substring(0, 7);
+                    matchBulan = itemMonth === filterBulan;
+                }
+                return matchJenis && matchJenisGula && matchBulan;
+            });
+
+            filteredLog.sort((a, b) => {
+                let valA = a[rekapSortColumn];
+                let valB = b[rekapSortColumn];
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return rekapSortAsc ? -1 : 1;
+                if (valA > valB) return rekapSortAsc ? 1 : -1;
+                return 0;
+            });
+
+            if (filteredLog.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="text-center text-muted py-4">Tidak ada data untuk filter tersebut.</td></tr>`;
+                return;
+            }
+
+            filteredLog.forEach(item => {
+                let jenisGula = item["Jenis Gula"] || "Curah";
+                let defaultHarga = jenisGula === 'Retail' ? appDb.config.HargaGulaRetail : appDb.config.HargaGulaCurah;
+                let harga = Number(item["Harga Gula"] || defaultHarga);
+                let totalNilai = Number(item["Total Nilai"] || (Number(item["Jumlah Ambil"]) * harga));
+                let petugas = item["Petugas Input"] || 'admin';
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-3"><span class="badge bg-success bg-opacity-75">${item["ID Transaksi"]}</span></td>
+                    <td class="py-3">${item.Timestamp}</td>
+                    <td class="py-3">${item["Personal Number"]}</td>
+                    <td class="py-3 fw-semibold">${item.Nama}</td>
+                    <td class="py-3">${item.Bagian || '-'}</td>
+                    <td class="py-3">${item.Jabatan || '-'}</td>
+                    <td class="py-3">${item["Jenis Pegawai"]}</td>
+                    <td class="py-3"><span class="badge ${jenisGula==='Retail'?'bg-primary':'bg-success'}">${jenisGula}</span></td>
+                    <td class="py-3 fw-bold text-danger">${item["Jumlah Ambil"]} Kg</td>
+                    <td class="py-3">${formatIDR(harga)}</td>
+                    <td class="py-3 fw-bold text-success">${formatIDR(totalNilai)}</td>
+                    <td class="py-3">${petugas}</td>
+                    <td class="py-3 text-center">
+                        <button class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1" onclick="reprintTransaction('${item["ID Transaksi"]}')" title="Cetak Ulang Struk"><i class="bi bi-printer"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.exportToExcel = function() {
+            if (!appDb.log || appDb.log.length === 0) {
+                Swal.fire('Kosong', 'Tidak ada data transaksi untuk diexport.', 'warning');
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                Swal.fire('Error', 'Library Excel (SheetJS) belum siap. Silakan refresh halaman.', 'error');
+                return;
+            }
+
+            let wb = XLSX.utils.book_new();
+            let wsAll = XLSX.utils.json_to_sheet(appDb.log);
+            XLSX.utils.book_append_sheet(wb, wsAll, "Log Keseluruhan");
+
+            let jenisSet = [...new Set(appDb.log.map(x => x["Jenis Pegawai"]))];
+            jenisSet.forEach(jenis => {
+                let subset = appDb.log.filter(x => x["Jenis Pegawai"] === jenis);
+                if (subset.length > 0) {
+                    let wsJenis = XLSX.utils.json_to_sheet(subset);
+                    let sheetName = String(jenis).substring(0, 30).replace(/[:\\/?*\[\]]/g, '');
+                    XLSX.utils.book_append_sheet(wb, wsJenis, sheetName || "Jenis");
+                }
+            });
+
+            XLSX.writeFile(wb, "Rekap_Transaksi_Gula_SIGAP.xlsx");
+            Swal.fire('Berhasil', 'File Excel Rekapitulasi berhasil diunduh!', 'success');
+        };
+    </script>
+</body>
+</html>
